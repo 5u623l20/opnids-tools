@@ -1,3 +1,8 @@
+NOTES: OPNids tools is a fork of OPNsense tools. It's likely to undergo some
+change in the near future. This documentation will be updated along the way.
+For the moment, the following documentation is an exact duplicate of the
+OPNsense/tools README. This said, YMMV as its applied to OPNids for now.
+
 About the OPNsense tools
 ========================
 
@@ -15,7 +20,7 @@ tasks require a root user.  Do the following to grab the repositories
 
     # pkg install git
     # cd /usr
-    # git clone https://github.com/opnsense/tools
+    # git clone https://github.com/opnids/tools
     # cd tools
     # make update
 
