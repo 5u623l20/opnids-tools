@@ -59,7 +59,7 @@ CONFIG?=	${TOOLSDIR}/config/${SETTINGS}/build.conf
 
 # Bootstrap the build options if not set:
 
-NAME?=		OPNsense
+NAME?=		OPNids
 TYPE?=		${NAME:tl}
 SUFFIX?=	#-devel
 FLAVOUR?=	OpenSSL
@@ -71,7 +71,7 @@ _ARCH!=		uname -p
 ARCH?=		${_ARCH}
 KERNEL?=	SMP
 QUICK?=		#yes
-ADDITIONS?=	os-dyndns${SUFFIX}
+ADDITIONS?=	#os-dyndns${SUFFIX}
 DEVICE?=	a10
 SPEED?=		115200
 UEFI?=		yes
