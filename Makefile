@@ -76,12 +76,8 @@ DEVICE?=	a10
 SPEED?=		115200
 UEFI?=		yes
 GITBASE?=	https://github.com/opnids
-MIRRORS?=	https://opnsense.c0urier.net \
-		http://mirrors.nycbug.org/pub/opnsense \
-		http://mirror.wdc1.us.leaseweb.net/opnsense \
-		http://mirror.sfo12.us.leaseweb.net/opnsense \
-		http://mirror.fra10.de.leaseweb.net/opnsense \
-		http://mirror.ams1.nl.leaseweb.net/opnsense
+MIRRORS?=	https://pkg.us.opnids.org \
+		http://pkg.nl.opnids.org
 SERVER?=	user@does.not.exist
 _VERSION!=	date '+%Y%m%d%H%M'
 VERSION?=	${_VERSION}
