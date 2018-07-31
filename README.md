@@ -1,13 +1,14 @@
-NOTES: OPNids tools is a fork of OPNsense tools. It's likely to undergo some
-change in the near future. This documentation will be updated along the way.
-For the moment, the following documentation is an exact duplicate of the
-OPNsense/tools README. This said, YMMV as its applied to OPNids for now.
+NOTE: These tools are a slightly modified version of OPNsense projects tools.
+There are slight modifications specific to the OPNids projects needs.
 
-About the OPNsense tools
+About the OPNids tools
 ========================
 
 In conjunction with src.git, ports.git, core.git and plugins.git they
-create sets, packages and images for the OPNsense project.
+create sets, packages and images for the OPNids project. These tools
+are a direct fork of the OPNsense tools and can largely be expected to 
+behave the same way with only slight modifications particular to the
+OPNids project. 
 
 Setting up a build system
 =========================
