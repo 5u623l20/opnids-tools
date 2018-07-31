@@ -17,7 +17,7 @@ for STAGE in update info base kernel xtools distfiles; do
 	(time make ${STAGE} 2>&1) > ${LOGSDIR}/${PRODUCT_VERSION}/${STAGE}.log
 done
 
-for FLAVOUR in OpenSSL LibreSSL; do
+for FLAVOUR in OpenSSL; do
 	if [ -z "${1}" ]; then
 		(make clean-packages FLAVOUR=${FLAVOUR} 2>&1) > /dev/null
 	fi
