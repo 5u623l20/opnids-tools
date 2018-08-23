@@ -12,7 +12,7 @@ done
 
 mkdir -p ${LOGSDIR}/${PRODUCT_VERSION}
 
-for STAGE in update info base kernel xtools distfiles; do
+for STAGE in update info base kernel distfiles; do
 	# we don't normally clean these stages
 	(time make ${STAGE} 2>&1) > ${LOGSDIR}/${PRODUCT_VERSION}/${STAGE}.log
 done
