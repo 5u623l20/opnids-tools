@@ -59,7 +59,7 @@ CONFIG?=	${TOOLSDIR}/config/${SETTINGS}/build.conf
 
 # Bootstrap the build options if not set:
 
-NAME?=		OPNids-devel
+NAME?=		OPNids
 TYPE?=		${NAME:tl}
 SUFFIX?=	#-devel
 FLAVOUR?=	OpenSSL
