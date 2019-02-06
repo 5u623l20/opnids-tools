@@ -81,36 +81,7 @@ setup_distfiles ${STAGEDIR}
 
 extract_packages ${STAGEDIR}
 remove_packages ${STAGEDIR} ${@} ${PRODUCT_CORES} ${PRODUCT_PLUGINS}
-
-for PKG in $(cd ${STAGEDIR}; find .${PACKAGESDIR}/All -type f); do
-	# all packages that install have their dependencies fulfilled
-	if pkg -c ${STAGEDIR} add ${PKG}; then
-		continue
-	fi
-
-	# some packages clash in files with others, check for conflicts
-	PKGORIGIN=$(pkg -c ${STAGEDIR} info -F ${PKG} | grep ^Origin | awk '{ print $3; }')
-	PKGGLOBS=
-	for CONFLICTS in CONFLICTS CONFLICTS_INSTALL; do
-		PKGGLOBS="${PKGGLOBS} $(make -C ${PORTSDIR}/${PKGORIGIN} -V ${CONFLICTS})"
-	done
-	for PKGGLOB in ${PKGGLOBS}; do
-		pkg -c ${STAGEDIR} remove -gy "${PKGGLOB}" || true
-	done
-
-	# if the conflicts are resolved this works now, but remove
-	# the package again as it may clash again later...
-	if pkg -c ${STAGEDIR} add ${PKG}; then
-		pkg -c ${STAGEDIR} remove -y ${PKGORIGIN}
-		continue
-	fi
-
-	# if nothing worked, we are missing a dependency and force a rebuild
-	rm -f ${STAGEDIR}/${PKG}
-done
-
-pkg -c ${STAGEDIR} set -yaA1
-pkg -c ${STAGEDIR} autoremove -y
+cleanup_packages ${STAGEDIR}
 
 MAKE_CONF="${CONFIGDIR}/make.conf"
 if [ -f ${MAKE_CONF} ]; then
@@ -119,19 +90,33 @@ fi
 
 PORTS_LIST=$(echo ports-mgmt/pkg; echo "${PORTS_LIST}")
 
+cat > ${STAGEDIR}/bin/echotime <<EOF
+#!/bin/sh
+echo "[\$(date '+%Y%m%d%H%M%S')]" \${*}
+EOF
+
+chmod 755 ${STAGEDIR}/bin/echotime
+
+echo "ECHO_MSG=echotime" >> ${STAGEDIR}/etc/make.conf
+
 # block SIGINT to allow for collecting port progress (use with care)
 trap : 2
 
 ${ENV_FILTER} chroot ${STAGEDIR} /bin/sh -s << EOF || true
+# create a caching mirror for all temporary package dependencies
+mkdir -p ${PACKAGESDIR}-cache
+cp -r ${PACKAGESDIR}/All ${PACKAGESDIR}-cache/All
+
 echo "${PORTS_LIST}" | while read PORT_ORIGIN; do
 	FLAVOR=\${PORT_ORIGIN##*@}
 	PORT=\${PORT_ORIGIN%%@*}
 	MAKE_ARGS="
-PACKAGES=${PACKAGESDIR}
+PACKAGES=${PACKAGESDIR}-cache
 PRODUCT_FLAVOUR=${PRODUCT_FLAVOUR}
 PRODUCT_PERL=${PRODUCT_PERL}
 PRODUCT_PHP=${PRODUCT_PHP}
-PRODUCT_PYTHON=${PRODUCT_PYTHON}
+PRODUCT_PYTHON2=${PRODUCT_PYTHON2}
+PRODUCT_PYTHON3=${PRODUCT_PYTHON3}
 PRODUCT_RUBY=${PRODUCT_RUBY}
 UNAME_r=\$(freebsd-version)
 "
@@ -172,16 +157,29 @@ UNAME_r=\$(freebsd-version)
 		exit 1
 	fi
 
+	for PKGNAME in \$(pkg query %n); do
+		pkg create -no ${PACKAGESDIR}-cache/All \${PKGNAME}
+	done
+
 	echo "${PORTS_LIST}" | while read PORT_DEPENDS; do
-		PORT_DEPNAME=\$(pkg query -e "%o == \${PORT_DEPENDS}" %n)
+		PORT_DEPNAME=\$(pkg query -e "%o == \${PORT_DEPENDS%%@*}" %n)
 		if [ -n "\${PORT_DEPNAME}" ]; then
+			echo ">>> Locking package dependency: \${PORT_DEPNAME}"
 			pkg set -yA0 \${PORT_DEPNAME}
 		fi
 	done
 
 	pkg autoremove -y
+
 	for PKGNAME in \$(pkg query %n); do
-		pkg create -no ${PACKAGESDIR}/All \${PKGNAME}
+		OLD=\$(find ${PACKAGESDIR}/All -name "\${PKGNAME}-[0-9]*.txz")
+		if [ -n "\${OLD}" ]; then
+			# already found
+			continue
+		fi
+		NEW=\$(find ${PACKAGESDIR}-cache/All -name "\${PKGNAME}-[0-9]*.txz")
+		echo ">>> Saving runtime package: \${PKGNAME}"
+		cp \${NEW} ${PACKAGESDIR}/All
 	done
 
 	make -s -C ${PORTSDIR}/\${PORT} clean \${MAKE_ARGS}

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2015-2018 Franco Fichtner <franco@opnsense.org>
+# Copyright (c) 2015-2019 Franco Fichtner <franco@opnsense.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -42,7 +42,7 @@ cat ${CONFIGDIR}/skim.conf ${CONFIGDIR}/ports.conf | \
 	if [ -n "${PORT_IGNORE}" ]; then
 		for PORT_QUIRK in $(echo ${PORT_IGNORE} | tr ',' ' '); do
 			if [ ${PORT_QUIRK} = ${PRODUCT_TARGET} -o \
-			     ${PORT_QUIRK} = ${PRODUCT_ARCH} -o ]; then
+			     ${PORT_QUIRK} = ${PRODUCT_ARCH} ]; then
 				continue 2
 			fi
 		done
@@ -88,12 +88,14 @@ echo "${PORTS_LIST}" | while read PORT_ORIGIN; do
 PRODUCT_FLAVOUR=${PRODUCT_FLAVOUR}
 PRODUCT_PERL=${PRODUCT_PERL}
 PRODUCT_PHP=${PRODUCT_PHP}
-PRODUCT_PYTHON=${PRODUCT_PYTHON}
+PRODUCT_PYTHON2=${PRODUCT_PYTHON2}
+PRODUCT_PYTHON3=${PRODUCT_PYTHON3}
 PRODUCT_RUBY=${PRODUCT_RUBY}
 UNAME_r=\$(freebsd-version)
 "
 	echo ">>> Fetching \${PORT_ORIGIN}..."
 	PORT=\${PORT_ORIGIN%%@*}
+	make -C ${PORTSDIR}/\${PORT} fetch \${MAKE_ARGS}
 	PORT_DEPENDS=\$(make -C ${PORTSDIR}/\${PORT} all-depends-list \
 	    \${MAKE_ARGS})
 	for PORT_DEPEND in \${PORT_DEPENDS}; do

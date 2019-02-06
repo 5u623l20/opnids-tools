@@ -13,11 +13,11 @@ OPNids project.
 Setting up a build system
 =========================
 
-Install [FreeBSD](https://www.freebsd.org/) 11.1-RELEASE (i386 or amd64 depending on your target)
-on a machine with at least 25GB of hard disk (UFS works better than ZFS)
-and at least 4GB of RAM to successfully build all standard images.  All
-tasks require a root user.  Do the following to grab the repositories
-(overwriting standard ports and src):
+Install [FreeBSD](https://www.freebsd.org/) 11.2-RELEASE (i386 or amd64
+depending on your target) on a machine with at least 25GB of hard disk
+(UFS works better than ZFS) and at least 4GB of RAM to successfully build
+all standard images.  All tasks require a root user.  Do the following to
+grab the repositories (overwriting standard ports and src):
 
     # pkg install git
     # cd /usr
@@ -41,10 +41,11 @@ How to specify build options on the command line
 ------------------------------------------------
 
 The build is broken down into individual stages: base,
-kernel and ports can be built separately and repeatedly
-without affecting the others.  All stages can be reinvoked
-and continue building without cleaning the previous progress.
-A final stage assembles all three stages into a target image.
+kernel, ports, plugins and core can be built separately and
+repeatedly without affecting the other stages.  All stages
+can be reinvoked and continue building without cleaning the
+previous progress.  A final stage assembles all five stages
+into a target image.
 
 All build steps are invoked via make(1):
 
@@ -210,25 +211,30 @@ generate output for the style checker:
 Advanced package builds
 -----------------------
 
-For very fast ports rebuilding of already installed packages
-the following works:
-
-    # make ports-<packagename>[,...]
-
-For even faster ports building it may be of use to cache all
-distribution files before running the actual build:
-
-    # make distfiles
-
-Core packages can be batch-built using:
-
-    # make core-<repo_branch_or_tag>[,...]
-
 Package sets ready for web server deployment are automatically
-generated and modified by ports.sh, plugins.sh and core.sh.
+generated and modified by ports, plugins and core setps.  The
+build automatically caches temporary build dependencies to avoid
+spurious rebuilds.  These packages are later discarded to provide
+a slim runtime set only.
+
 If signing keys are available, the packages set will be signed
 twice, first embedded into repository metadata (inside) and
 then again as a flat file (outside) to ensure integrity.
+
+For faster ports building it may be of use to cache all distribution
+files before running the actual build:
+
+    # make distfiles
+
+For targeted rebuilding of already built packages the following
+works:
+
+    # make ports-<packagename>[,...]
+    # make plugins-<packagename>[,...]
+    # make core-<packagename>[,...]
+
+Please note that reissuing ports builds will clear plugins and
+core progress.
 
 Acquiring precompiled sets from the mirrors
 -------------------------------------------
@@ -370,10 +376,10 @@ Should it not fit your needs, you can change the name using:
 The available targets are: base, distfiles, dvd, kernel, nano,
 packages, serial, vga and vm.
 
-The current state or a tagged state of required build repositories
-on the system can be printed using:
+The current state of the associated build repositories checked
+out on the system can be printed using:
 
-    # make info[-<version>]
+    # make info
 
 Last but not least, in case build variables needs to be inspected,
 they can be printed selectively using:
@@ -404,25 +410,34 @@ Nightly builds are the only builds that write and archive logs under:
 
     # make print-LOGSDIR
 
-with ./latest pointing to the last nightly build run.  Older logs are
-archived and available for a number of runs for retrospective analysis.
+with ./latest containing the last nightly build run.  Older logs are
+archived and available for a whole week for retrospective analysis.
 
 To push sets and images to a remote location use the upload target:
 
-    # make upload-<set_or_image>[,...]
+    # make upload-<set>[,...]
 
 To pull sets and images from a remote location use the download target:
 
-    # make download-<set_or_image_or_logs>[,...]
+    # make download-<set>[,...]
 
 Logs can be downloaded as well for local inspection.  Note that download
 like prefetch will purge all locally existing targets.  Use SERVER to
 specify the remote end, e.g. SERVER=user@does.not.exist
 
-Last but not least, a refresh of OPNsense core and plugins on package
+Additionally, UPLOADDIR can be used to specify a remote location.  At
+this point only "logs" upload cleares and creates directories on the fly.
+
+If you want to script interactive prompts you may use the confirm target
+to operate yes or no questions before an action:
+
+    # make info confirm dvd
+
+Last but not least, a rebuild of OPNsense core and plugins on package
 sets is invoked using:
 
-    # make refresh
+    # make hotfix[-<step>]
 
 It will flush all previous packages except for ports, rebuild core and
-plugins and sign the sets if enabled.  It is used to issue hotfixes.
+plugins and sign the sets if enabled.  It can also explicity set "core"
+or "plugins".

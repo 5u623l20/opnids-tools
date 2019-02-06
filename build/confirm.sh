@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2015-2019 Franco Fichtner <franco@opnsense.org>
+# Copyright (c) 2018 Franco Fichtner <franco@opnsense.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -27,17 +27,16 @@
 
 set -e
 
-SELF=rebase
+SELF=confirm
 
 . ./common.sh
 
-setup_stage ${STAGEDIR}
+read -p "Proceed with this action? [y/N]: " YN
 
-BASE_SET=$(find ${SETSDIR} -name "base-*-${PRODUCT_ARCH}.txz")
-BASE_OBSOLETE=/usr/local/opnsense/version/base.obsolete
-
-tar -tf ${BASE_SET} | sed -e 's/^\.//g' -e '/\/$/d' | sort > \
-    ${CONFIGDIR}/plist.base.${PRODUCT_ARCH}
-
-tar -C ${STAGEDIR} -xf ${BASE_SET} .${BASE_OBSOLETE}
-cp ${STAGEDIR}${BASE_OBSOLETE} ${CONFIGDIR}/plist.obsolete.${PRODUCT_ARCH}
+case ${YN} in
+[yY])
+	;;
+*)
+	exit 1
+	;;
+esac

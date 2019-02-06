@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2018 Franco Fichtner <franco@opnsense.org>
+# Copyright (c) 2015-2019 Franco Fichtner <franco@opnsense.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -23,14 +23,16 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-STEPS=		arm base boot chroot clean compress core distfiles download \
-		dvd info kernel nano plugins ports prefetch print rebase \
-		release rename serial sign skim test update upload verify \
-		vga vm xtools
-SCRIPTS=	batch nightly refresh pkg_fingerprint pkg_sign
+STEPS=		arm base boot chroot clean compress confirm core distfiles \
+		download dvd info kernel nano plugins ports prefetch print \
+		rebase release rename rewind serial sign skim test update \
+		upload verify vga vm xtools
+SCRIPTS=	batch hotfix nightly
 .PHONY:		${STEPS}
 
 PAGER?=		less
+
+.MAKE.JOB.PREFIX?=	# tampers with some of our make invokes
 
 all:
 	@cat ${.CURDIR}/README.md | ${PAGER}
@@ -40,18 +42,18 @@ lint-steps:
 	@sh -n ${.CURDIR}/build/${STEP}.sh
 .endfor
 
-lint-scripts:
+lint-composite:
 .for SCRIPT in ${SCRIPTS}
-	@sh -n ${.CURDIR}/scripts/${SCRIPT}.sh
+	@sh -n ${.CURDIR}/composite/${SCRIPT}.sh
 .endfor
 
-lint: lint-steps lint-scripts
+lint: lint-steps lint-composite
 
 # Special vars to load early build.conf settings:
 
 TOOLSDIR?=	/usr/tools
 TOOLSBRANCH?=	master
-SETTINGS?=	18.9
+SETTINGS?=	19.1
 
 CONFIG?=	${TOOLSDIR}/config/${SETTINGS}/build.conf
 
@@ -63,10 +65,6 @@ NAME?=		OPNids
 TYPE?=		${NAME:tl}
 SUFFIX?=	#-devel
 FLAVOUR?=	OpenSSL
-PERL?=		5.26
-PHP?=		71
-PYTHON?=	27
-RUBY?=		25
 _ARCH!=		uname -p
 ARCH?=		${_ARCH}
 KERNEL?=	SMP
@@ -79,12 +77,13 @@ GITBASE?=	https://github.com/opnids
 MIRRORS?=	https://pkg.us.opnids.org \
 		http://pkg.nl.opnids.org
 SERVER?=	user@does.not.exist
+UPLOADDIR?=
 _VERSION!=	date '+%Y%m%d%H%M'
 VERSION?=	${_VERSION}
 STAGEDIRPREFIX?=/usr/obj
 PORTSREFDIR?=	/usr/hardenedbsd-ports
 PORTSREFBRANCH?=master
-PLUGINSENV?=	PLUGIN_PHP=${PHP}
+PLUGINSENV?=	PLUGIN_PHP=${PHP} PLUGIN_ABI=${SETTINGS}
 PLUGINSDIR?=	/usr/plugins
 PLUGINSBRANCH?=	master
 PORTSDIR?=	/usr/ports
@@ -122,7 +121,7 @@ VERBOSE_FLAGS=	-x
 VERBOSE_HIDDEN=	@
 .endif
 
-.for _VERSION in PERL PHP PYTHON RUBY
+.for _VERSION in PERL PHP PYTHON2 PYTHON3 RUBY
 VERSIONS+=	PRODUCT_${_VERSION}=${${_VERSION}}
 .endfor
 
@@ -142,11 +141,12 @@ ${STEP}: lint-steps
 	    -g ${TOOLSBRANCH} -E ${COREBRANCH} -G ${PORTSREFBRANCH} \
 	    -H "${COREENV}" -Q "${QUICK}" -u "${UEFI:tl}" -U "${SUFFIX}" \
 	    -V "${ADDITIONS}" -O "${GITBASE}"  -r "${SERVER}" \
-	    -q "${VERSIONS}" -h "${PLUGINENV}" ${${STEP}_ARGS}
+	    -q "${VERSIONS}" -h "${PLUGINENV}" -I "${UPLOADDIR}" \
+	    ${${STEP}_ARGS}
 .endfor
 
 .for SCRIPT in ${SCRIPTS}
-${SCRIPT}: lint-scripts
+${SCRIPT}: lint-composite
 	${VERBOSE_HIDDEN} cd ${.CURDIR} && sh ${VERBOSE_FLAGS} \
-	    ./scripts/${SCRIPT}.sh ${${SCRIPT}_ARGS}
+	    ./composite/${SCRIPT}.sh ${${SCRIPT}_ARGS}
 .endfor

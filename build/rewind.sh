@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2015-2019 Franco Fichtner <franco@opnsense.org>
+# Copyright (c) 2018 Franco Fichtner <franco@opnsense.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -27,17 +27,47 @@
 
 set -e
 
-SELF=rebase
+SELF=rewind
 
 . ./common.sh
 
-setup_stage ${STAGEDIR}
+ARGS="src ports plugins core tools"
 
-BASE_SET=$(find ${SETSDIR} -name "base-*-${PRODUCT_ARCH}.txz")
-BASE_OBSOLETE=/usr/local/opnsense/version/base.obsolete
+for ARG in ${ARGS}; do
+	case ${ARG} in
+	core)
+		BRANCH=${COREBRANCH}
+		DIR=${COREDIR}
+		;;
+	plugins)
+		BRANCH=${PLUGINSBRANCH}
+		DIR=${PLUGINSDIR}
+		;;
+	ports)
+		BRANCH=${PORTSBRANCH}
+		DIR=${PORTSDIR}
+		;;
+	src)
+		BRANCH=${SRCBRANCH}
+		DIR=${SRCDIR}
+		;;
+	tools)
+		BRANCH=${TOOLSBRANCH}
+		DIR=${TOOLSDIR}
+		;;
+	*)
+		continue
+		;;
+	esac
 
-tar -tf ${BASE_SET} | sed -e 's/^\.//g' -e '/\/$/d' | sort > \
-    ${CONFIGDIR}/plist.base.${PRODUCT_ARCH}
+	# XXX When we start rewind set a marker
+	# for the build process to ignore master
+	# branch development package builds.
+	#
+	# This flag may be cleared by "make update".
 
-tar -C ${STAGEDIR} -xf ${BASE_SET} .${BASE_OBSOLETE}
-cp ${STAGEDIR}${BASE_OBSOLETE} ${CONFIGDIR}/plist.obsolete.${PRODUCT_ARCH}
+	git_tag ${DIR} ${PRODUCT_VERSION}
+	continue; # XXX here be dragons
+	git_pull ${DIR} ${BRANCH}
+	git_reset ${DIR}
+done

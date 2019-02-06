@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2016-2019 Franco Fichtner <franco@opnsense.org>
+# Copyright (c) 2017-2019 Franco Fichtner <franco@opnsense.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -25,25 +25,48 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-set -e
+eval "$(make print-LOGSDIR,PRODUCT_ARCH,PRODUCT_VERSION,STAGEDIR,TARGETDIRPREFIX)"
 
-SELF=sign
+for RECYCLE in $(cd ${LOGSDIR}; find . -name "[0-9]*" -type f | \
+    sort -r | tail -n +7); do
+	(cd ${LOGSDIR}; rm ${RECYCLE})
+done
 
-. ./common.sh
+(make clean-obj 2>&1) > /dev/null
 
-BASE_SET=$(find ${SETSDIR} -name "base-*-${PRODUCT_ARCH}.txz")
-if [ -f "${BASE_SET}" ]; then
-	generate_signature ${BASE_SET}
+mkdir -p ${LOGSDIR}/${PRODUCT_VERSION}
+
+for STAGE in update info base kernel xtools distfiles; do
+	LOG=${LOGSDIR}/${PRODUCT_VERSION}/${STAGE}.log
+	# we don't normally clean these stages
+	(time make ${STAGE} 2>&1) > ${LOG}
+done
+
+CLEAN=packages
+if [ -n "${1}" ]; then
+	CLEAN=plugins,core
 fi
 
-KERNEL_SET=$(find ${SETSDIR} -name "kernel-*-${PRODUCT_ARCH}.txz")
-if [ -f "${KERNEL_SET}" ]; then
-	generate_signature ${KERNEL_SET}
-fi
+for FLAVOUR in OpenSSL LibreSSL; do
+	(make clean-${CLEAN} FLAVOUR=${FLAVOUR} 2>&1) > /dev/null
+done
 
-PKGS_SET=$(find ${SETSDIR} -name "packages-*-${PRODUCT_FLAVOUR}-${PRODUCT_ARCH}.tar")
-if [ -f "${PKGS_SET}" ]; then
-	setup_stage ${STAGEDIR}
-	extract_packages ${STAGEDIR}
-	bundle_packages ${STAGEDIR} ${SELF}
-fi
+for STAGE in ports plugins core test; do
+	for FLAVOUR in OpenSSL LibreSSL; do
+		LOG=${LOGSDIR}/${PRODUCT_VERSION}/${STAGE}-${FLAVOUR}.log
+		((time make ${STAGE} FLAVOUR=${FLAVOUR} 2>&1) > ${LOG}; \
+		    tail -n 1000 ${LOG} > ${LOG}.tail) &
+	done
+
+	wait
+done
+
+tar -C ${TARGETDIRPREFIX} -cJf \
+    ${LOGSDIR}/${PRODUCT_VERSION}-${PRODUCT_ARCH}.txz \
+    ${LOGSDIR##${TARGETDIRPREFIX}/}/${PRODUCT_VERSION}
+
+rm -rf ${LOGSDIR}/latest
+mv ${LOGSDIR}/${PRODUCT_VERSION} ${LOGSDIR}/latest
+
+(make upload-log SERVER=${SERVER} UPLOADDIR=${UPLOADDIR} \
+    VERSION=${PRODUCT_VERSION} 2>&1) > /dev/null

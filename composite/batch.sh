@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2015-2019 Franco Fichtner <franco@opnsense.org>
+# Copyright (c) 2017 Franco Fichtner <franco@opnsense.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -25,19 +25,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-set -e
+for FLAVOUR in OpenSSL LibreSSL; do
+	make clean-obj ${*} FLAVOUR=${FLAVOUR}
+done
 
-SELF=rebase
-
-. ./common.sh
-
-setup_stage ${STAGEDIR}
-
-BASE_SET=$(find ${SETSDIR} -name "base-*-${PRODUCT_ARCH}.txz")
-BASE_OBSOLETE=/usr/local/opnsense/version/base.obsolete
-
-tar -tf ${BASE_SET} | sed -e 's/^\.//g' -e '/\/$/d' | sort > \
-    ${CONFIGDIR}/plist.base.${PRODUCT_ARCH}
-
-tar -C ${STAGEDIR} -xf ${BASE_SET} .${BASE_OBSOLETE}
-cp ${STAGEDIR}${BASE_OBSOLETE} ${CONFIGDIR}/plist.obsolete.${PRODUCT_ARCH}
+make clean-obj

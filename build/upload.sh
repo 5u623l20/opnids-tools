@@ -34,7 +34,7 @@ SELF=upload
 upload()
 {
 	echo ">>> Uploading ${1} to ${PRODUCT_SERVER}..."
-	(cd ${2}; scp ${3} ${PRODUCT_SERVER}:)
+	(cd ${2}; scp ${3} ${PRODUCT_SERVER}:${UPLOADDIR})
 }
 
 for ARG in ${@}; do
@@ -44,6 +44,12 @@ for ARG in ${@}; do
 		;;
 	base|kernel)
 		upload ${ARG} ${SETSDIR} "${ARG}-*"
+		;;
+	log)
+		upload ${ARG} ${LOGSDIR} "${PRODUCT_VERSION}-*"
+		;;
+	logs)
+		upload ${ARG} ${LOGSDIR} "[0-9]*"
 		;;
 	packages|release)
 		upload ${ARG} ${SETSDIR} "${ARG}-*-${PRODUCT_FLAVOUR}-*"
