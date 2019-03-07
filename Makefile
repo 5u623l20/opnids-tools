@@ -63,13 +63,14 @@ CONFIG?=	${TOOLSDIR}/config/${SETTINGS}/build.conf
 
 NAME?=		OPNids
 TYPE?=		${NAME:tl}
-SUFFIX?=	#-devel
+SUFFIX?=	-devel
 FLAVOUR?=	OpenSSL
 _ARCH!=		uname -p
 ARCH?=		${_ARCH}
 KERNEL?=	SMP
 QUICK?=		#yes
-ADDITIONS?=	#os-dyndns${SUFFIX}
+#ADDITIONS?=	#os-dyndns${SUFFIX}
+ADDITIONS?=	os-dragonfly-mle${SUFFIX} os-filebeat${SUFFIX} os-opnids-theme${SUFFIX}
 DEVICE?=	a10
 SPEED?=		115200
 UEFI?=		yes
