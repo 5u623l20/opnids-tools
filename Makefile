@@ -63,7 +63,7 @@ CONFIG?=	${TOOLSDIR}/config/${SETTINGS}/build.conf
 
 NAME?=		OPNids
 TYPE?=		${NAME:tl}
-SUFFIX?=	-devel
+SUFFIX?=	#-devel
 FLAVOUR?=	OpenSSL
 _ARCH!=		uname -p
 ARCH?=		${_ARCH}
