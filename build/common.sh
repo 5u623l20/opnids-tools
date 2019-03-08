@@ -271,6 +271,14 @@ git_fetch()
 	git -C ${1} fetch --all --prune
 }
 
+git_submodule() {
+	if [ -d "${1}/.gitmodules" ]; then
+		return
+	fi
+	
+	git -C ${1} submodule update --init --recursive --remote
+}
+
 git_clone()
 {
 	if [ -d "${1}/.git" ]; then
@@ -663,7 +671,7 @@ search_packages()
 
 	for PKG in ${PKGLIST}; do
 		if [ -n "$(find ${BASEDIR}${PACKAGESDIR}/All \
-		    -name "${PKG}-[0-9]*.txz" -type f)" ]; then
+		    -name "${PKG}-[a-z0-9]*.txz" -type f)" ]; then
 			return 0
 		fi
 	done
@@ -681,7 +689,7 @@ remove_packages()
 
 	for PKG in ${PKGLIST}; do
 		for PKGFILE in $(cd ${BASEDIR}${PACKAGESDIR}; \
-		    find All -name "${PKG}-[0-9]*.txz" -type f); do
+		    find All -name "${PKG}-[a-z0-9]*.txz" -type f); do
 			rm ${BASEDIR}${PACKAGESDIR}/${PKGFILE}
 		done
 	done
@@ -771,7 +779,7 @@ install_packages()
 	# be installed.  Used to build a runtime environment.
 	for PKG in pkg ${PKGLIST}; do
 		PKGGLOB=$(echo "${PKG}" | sed 's/[^*]*//')
-		PKGSEARCH="-name ${PKG}-[0-9]*.txz"
+		PKGSEARCH="-name ${PKG}-[a-z0-9]*.txz"
 		PKGFOUND=
 		if [ -n "${PKGGLOB}" -a -z "${PRODUCT_SUFFIX}" ]; then
 			PKGSEARCH="${PKGSEARCH} ! -name ${PKG}-devel-[0-9]*.txz"

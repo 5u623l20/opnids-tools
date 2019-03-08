@@ -69,6 +69,7 @@ fi
 check_packages ${SELF} ${@}
 
 git_branch ${PLUGINSDIR} ${PLUGINSBRANCH} PLUGINSBRANCH
+git_submodule ${PLUGINSDIR}
 
 setup_stage ${STAGEDIR}
 setup_base ${STAGEDIR}
